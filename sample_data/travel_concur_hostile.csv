@@ -1,0 +1,17 @@
+# Source: Concur Export
+# Generated: 2024-04-20
+# Employee,ID,Dept,CC,Start,End,Type,Origin,Dest,Class,Dist,Amt,Curr,Vendor,Nights,Country,Vehicle
+James Wright,EMP-001,Sales,CC-SALES,01/08/2024,01/10/2024,Air,JFK,LHR,Business,,4250.00,USD,British Airways,,,
+James Wright,EMP-001,Sales,CC-SALES,2024-01-10,12.01.2024,Hotel,,,,,320.00,GBP,Marriott,2,UK,
+James Wright,EMP-001,Sales,CC-SALES,2024-01-12,2024-01-12,Air,LHR,CDG,Economy,,180.00,GBP,EasyJet,,,
+"Priya Sharma",EMP-002,Engineering,CC-ENG,15-Jan-24,17-Jan-24,Air,BOM,DEL,Economy,,185.00,INR,IndiGo,,,
+Priya Sharma,EMP-002,Engineering,CC-ENG,2024-01-15,2024-01-17,Hotel,,,,,4,500.00,INR,Taj Hotels,1,IN,
+Michael Chen,EMP-003,Procurement,CC-PROC,2024-01-22,2024-01-26,Air,SFO,SIN,J,,2100.00,USD,Singapore Airlines,,,
+Michael Chen,EMP-003,Procurement,CC-PROC,2024-01-22,2024-01-26,Hotel,,,,,890.00,SGD,Mandarin Oriental,3,SG,
+"Wei, Chen",EMP-010,Finance,CC-FIN,2024-03-10,2024-03-12,Rail,FRA,CDG,,1200,45.00,EUR,Deutsche Bahn,,,
+Elena Torres,EMP-008,Legal,CC-LEGAL,2024-03-01,2024-03-03,Air,MAD,LHR,Premium,,1265.00,EUR,Iberia,,,
+Raj Patel,EMP-009,Operations,CC-OPS,2024-03-05,2024-03-07,Car,,,,85,120.00,SGD,Grab,,,Economy
+"Bad Row, Missing Date",EMP-999,Test,CC-TEST,,2024-04-01,Air,JFK,LAX,Economy,,500,USD,Delta,,,
+"Mixed Encoding Test: €",EMP-999,Test,CC-TEST,2024-04-01,2024-04-01,Hotel,,,,,100,EUR,Hotel €,,DE,
+"NaN Distance",EMP-999,Test,CC-TEST,2024-04-01,2024-04-01,Air,XYZ,ABC,Economy,NaN,100,USD,GhostAir,,,
+"Malformed Amount",EMP-999,Test,CC-TEST,2024-04-01,2024-04-01,Air,JFK,LHR,Economy,,$1,000,USD,Delta,,,
