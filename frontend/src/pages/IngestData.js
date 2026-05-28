@@ -18,7 +18,15 @@ const SOURCES = [
       {v:'JP',l:'Japan (0.472)'},{v:'CN',l:'China (0.581)'},
     ]}] },
   { key:'travel_flights', label:'Corporate Travel', scope:'Scope 3', scopeCls:'badge-s3', icon:'✈',
-    desc:'Concur / Navan CSV export. Auto-detects Air, Hotel, Car, Rail rows. Computes flight distances from IATA codes. Business class gets 2× EF multiplier (DEFRA). Hotel EF by destination country.',
+    desc:'Unified Concur / Navan CSV export. Auto-detects Air, Hotel, Car, and Rail. Computes flight distances via IATA codes. Handles cabin class multipliers and per-country hotel EFs.',
+    accepts:'.csv',
+    fields:[] },
+  { key:'travel_hotels', label:'Hotel Lodging', scope:'Scope 3', scopeCls:'badge-s3', icon:'🏨',
+    desc:'Specific export for hotel stays. Uses nights and destination country for calculation. (Useful for non-Concur hotel trackers).',
+    accepts:'.csv',
+    fields:[] },
+  { key:'travel_ground', label:'Ground Transport', scope:'Scope 3', scopeCls:'badge-s3', icon:'🚗',
+    desc:'Specific export for car rentals, rail, or taxi logs. Handles vehicle class (SUV, EV, Compact) and rail distance.',
     accepts:'.csv',
     fields:[] },
 ];
@@ -150,7 +158,7 @@ export default function IngestData() {
       )}
 
       {/* Source picker */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:10, marginBottom:22 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(160px, 1fr))', gap:10, marginBottom:22 }}>
         {SOURCES.map(s => (
           <button key={s.key} onClick={() => { setSrc(s.key); setFile(null); setResult(null); setError(''); }}
             style={{ padding:'14px', borderRadius:'var(--r-lg)', textAlign:'left', cursor:'pointer',

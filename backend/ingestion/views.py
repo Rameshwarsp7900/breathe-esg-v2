@@ -14,7 +14,7 @@ from .parsers.travel_parser import parse_travel_file
 logger = logging.getLogger(__name__)
 
 VALID_SOURCE_TYPES = {
-    'sap_fuel', 'utility_electricity', 'travel_flights',
+    'sap_fuel', 'utility_electricity', 'travel_flights', 'travel_hotels', 'travel_ground',
 }
 
 

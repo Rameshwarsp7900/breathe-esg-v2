@@ -32,10 +32,21 @@ def decode_bytes(raw_bytes: bytes) -> str:
 
 def read_csv_flexible(text: str) -> pd.DataFrame:
     """Try multiple delimiters; return first that gives >= 3 columns."""
+    # Strip potential BOM or leading junk
+    text = text.lstrip('\ufeff\n\r\t ')
+
     for sep in ('\t', ';', ',', '|'):
         try:
+            # We use engine='python' for better robustness with weird delimiters/quotes
             df = pd.read_csv(io.StringIO(text), sep=sep, dtype=str,
-                             skip_blank_lines=True, on_bad_lines='skip')
+                             skip_blank_lines=True, on_bad_lines='skip',
+                             engine='python', quoting=3) # quoting=3 is csv.QUOTE_NONE
+
+            # If it failed to find columns, try again with default quoting
+            if len(df.columns) < 2:
+                df = pd.read_csv(io.StringIO(text), sep=sep, dtype=str,
+                                 skip_blank_lines=True, on_bad_lines='skip')
+
             if len(df.columns) >= 3:
                 return df
         except Exception:
@@ -45,7 +56,7 @@ def read_csv_flexible(text: str) -> pd.DataFrame:
 
 def normalize_decimal(val) -> Optional[float]:
     """
-    Handle both German (1.234,56) and standard (1234.56) decimal notation.
+    Handle both German (1.234,56), European (1 234,56) and standard (1,234.56) decimal notation.
     Returns None if unparseable.
     """
     if val is None:
@@ -53,11 +64,20 @@ def normalize_decimal(val) -> Optional[float]:
     s = str(val).strip()
     if not s or s.lower() in ('nan', 'none', 'null', '-', ''):
         return None
-    # German format: thousands sep = '.', decimal sep = ','
-    if re.match(r'^\d{1,3}(\.\d{3})+(,\d+)?$', s):
-        s = s.replace('.', '').replace(',', '.')
+
+    # Remove any spaces used as thousands separators
+    s = s.replace(' ', '')
+
+    # Handle German/European format: 1.234,56 or 1234,56
+    # If there is a comma and it's towards the end, and either no dot or dot is thousands sep
+    if ',' in s and ('.' not in s or s.find('.') < s.find(',')):
+        # Check if it looks like a European number
+        if re.search(r',\d{1,2}$', s) or ',' in s:
+            s = s.replace('.', '').replace(',', '.')
     else:
+        # Standard format: remove commas as thousands separators
         s = s.replace(',', '')
+
     try:
         v = float(s)
         if math.isnan(v) or math.isinf(v):
