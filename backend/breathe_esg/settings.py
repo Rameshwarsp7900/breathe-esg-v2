@@ -98,11 +98,13 @@ REST_FRAMEWORK = {
 
 # CORS — production tightens this via env var
 CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=True, cast=bool)
-CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='', cast=Csv())
+_cors_origins = config('CORS_ALLOWED_ORIGINS', default='', cast=Csv())
+CORS_ALLOWED_ORIGINS = [o for o in _cors_origins if o.startswith('http')]
 CORS_ALLOW_CREDENTIALS = True
 
 # CSRF trusted origins for cross-domain SPA
-CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='http://localhost:3000', cast=Csv())
+_csrf_origins = config('CSRF_TRUSTED_ORIGINS', default='http://localhost:3000', cast=Csv())
+CSRF_TRUSTED_ORIGINS = [o for o in _csrf_origins if o.startswith('http')]
 # Must be False so the JS axios client can read the csrftoken cookie
 CSRF_COOKIE_HTTPONLY = False
 # Send the cookie on cross-origin requests
