@@ -265,12 +265,20 @@ function DetailPanel({ record: r, slug, onClose, onAction }) {
   );
 }
 
-export default function ReviewQueue() {
+export default function ReviewQueue({ initialFilter = {} }) {
   const { currentTenant } = useAuth();
   const { toast } = useToast();
   const [records, setRecords]   = useState([]);
   const [loading, setLoading]   = useState(true);
-  const [filters, setFilters]   = useState({ status: 'pending_review', scope: '', source_type: '', search: '', batch: '', date_from: '', date_to: '' });
+  const [filters, setFilters]   = useState({
+    status: initialFilter.status || 'pending_review',
+    scope: initialFilter.scope || '',
+    source_type: initialFilter.source_type || '',
+    search: initialFilter.search || '',
+    batch: initialFilter.batch || '',
+    date_from: initialFilter.date_from || '',
+    date_to: initialFilter.date_to || '',
+  });
   const [page, setPage]         = useState(1);
   const [totalCount, setTotal]  = useState(0);
   const [selected, setSelected] = useState(new Set());
@@ -336,6 +344,15 @@ export default function ReviewQueue() {
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
+  const STATUS_LABELS = {
+    flagged: 'Anomalies Flagged',
+    pending_review: 'Pending Review',
+    approved: 'Approved & Verified',
+    locked: 'Locked for Audit',
+    rejected: 'Rejected Records',
+  };
+  const activeFilterLabel = initialFilter.status ? STATUS_LABELS[initialFilter.status] : null;
+
   return (
     <div className="fade-in" style={{ padding:'24px 28px' }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:18 }}>
@@ -359,6 +376,34 @@ export default function ReviewQueue() {
           </button>
         </div>
       </div>
+
+      {/* Active filter banner when navigating from dashboard */}
+      {activeFilterLabel && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '10px 16px', marginBottom: 16, borderRadius: 'var(--r)',
+          background: filters.status === 'flagged' ? 'var(--amber-dim)' :
+                      filters.status === 'approved' ? 'var(--green-dim)' :
+                      filters.status === 'locked' ? 'var(--blue-dim)' :
+                      filters.status === 'rejected' ? 'var(--red-dim)' : '#f1f5f9',
+          border: `1px solid ${
+            filters.status === 'flagged' ? 'rgba(245,158,11,.3)' :
+            filters.status === 'approved' ? 'rgba(34,197,94,.3)' :
+            filters.status === 'locked' ? 'rgba(59,130,246,.3)' :
+            filters.status === 'rejected' ? 'rgba(239,68,68,.3)' : 'var(--border)'
+          }`,
+        }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
+            {filters.status === 'flagged' ? '⚠️' :
+             filters.status === 'approved' ? '✅' :
+             filters.status === 'locked' ? '🔒' :
+             filters.status === 'rejected' ? '✕' : '📋'} Showing: {activeFilterLabel}
+          </span>
+          <button className="btn btn-ghost btn-xs" onClick={() => setFilter('status', '')}>
+            Show all statuses ✕
+          </button>
+        </div>
+      )}
 
       {/* Filters */}
       <div style={{ display:'flex', gap:8, marginBottom:10, flexWrap:'wrap' }}>

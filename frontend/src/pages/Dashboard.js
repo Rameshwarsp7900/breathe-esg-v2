@@ -30,18 +30,36 @@ const FACTOR_OPTS = [
 
 
 
-function StatCard({ label, value, sub, color, bg }) {
+function StatCard({ label, value, sub, color, bg, onClick }) {
   const isLong = value && value.toString().length > 9;
   return (
-    <div className="card card-sm" style={{ background: bg || '#ffffff', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+    <div
+      className="card card-sm"
+      onClick={onClick}
+      style={{
+        background: bg || '#ffffff',
+        border: '1px solid var(--border)',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        cursor: onClick ? 'pointer' : 'default',
+        transition: 'transform 0.12s, box-shadow 0.12s',
+        ...(onClick ? { ':hover': { transform: 'translateY(-2px)' } } : {}),
+      }}
+      onMouseEnter={e => { if (onClick) e.currentTarget.style.transform = 'translateY(-2px)'; if (onClick) e.currentTarget.style.boxShadow = 'var(--shadow-lg)'; }}
+      onMouseLeave={e => { if (onClick) e.currentTarget.style.transform = ''; if (onClick) e.currentTarget.style.boxShadow = ''; }}
+    >
       <div>
-        <div style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6, fontWeight: 600 }}>{label}</div>
-        <div style={{ 
-          fontSize: isLong ? 17 : 23, 
-          fontWeight: 700, 
-          color: color || 'var(--text)', 
-          fontFamily: 'var(--font)', 
-          letterSpacing: '-0.03em', 
+        <div style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6, fontWeight: 600 }}>
+          {label}
+          {onClick && <span style={{ marginLeft: 4, opacity: 0.5, fontSize: 9 }}>↗</span>}
+        </div>
+        <div style={{
+          fontSize: isLong ? 17 : 23,
+          fontWeight: 700,
+          color: color || 'var(--text)',
+          fontFamily: 'var(--font)',
+          letterSpacing: '-0.03em',
           lineHeight: 1.1,
           whiteSpace: 'nowrap',
           overflow: 'hidden',
@@ -68,7 +86,7 @@ const CustomTooltip = ({ active, payload, label }) => {
   );
 };
 
-export default function Dashboard({ setPage }) {
+export default function Dashboard({ setPage, goToReview }) {
   const { currentTenant } = useAuth();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -284,12 +302,18 @@ export default function Dashboard({ setPage }) {
       {/* KPI Cards Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12, marginBottom: 20 }}>
         <StatCard label="Carbon Footprint" value={`${(stats.total_co2e_t || 0).toLocaleString(undefined, { maximumFractionDigits: 1 })} t`} sub="Total CO₂e All Scopes" color="var(--indigo)" bg="var(--indigo-dim)"/>
-        <StatCard label="Records Ingested" value={(stats.total_records || 0).toLocaleString()} sub="Normalized rows"/>
-        <StatCard label="Pending Queue" value={(stats.pending_review || 0).toLocaleString()} color="var(--text-muted)" bg="#f8fafc"/>
-        <StatCard label="Anomalies Flagged" value={(stats.flagged || 0).toLocaleString()} color="var(--amber)" bg="var(--amber-dim)"/>
-        <StatCard label="Approved & Verified" value={(stats.approved || 0).toLocaleString()} color="var(--green)" bg="var(--green-dim)"/>
-        <StatCard label="Locked for Audit" value={(stats.locked || 0).toLocaleString()} color="var(--blue)" bg="var(--blue-dim)"/>
-        <StatCard label="Rejected records" value={(stats.rejected || 0).toLocaleString()} color="var(--red)" bg="var(--red-dim)"/>
+        <StatCard label="Records Ingested" value={(stats.total_records || 0).toLocaleString()} sub="Normalized rows"
+          onClick={() => goToReview({})}/>
+        <StatCard label="Pending Queue" value={(stats.pending_review || 0).toLocaleString()} color="var(--text-muted)" bg="#f8fafc"
+          onClick={() => goToReview({ status: 'pending_review' })}/>
+        <StatCard label="Anomalies Flagged" value={(stats.flagged || 0).toLocaleString()} color="var(--amber)" bg="var(--amber-dim)"
+          onClick={() => goToReview({ status: 'flagged' })}/>
+        <StatCard label="Approved & Verified" value={(stats.approved || 0).toLocaleString()} color="var(--green)" bg="var(--green-dim)"
+          onClick={() => goToReview({ status: 'approved' })}/>
+        <StatCard label="Locked for Audit" value={(stats.locked || 0).toLocaleString()} color="var(--blue)" bg="var(--blue-dim)"
+          onClick={() => goToReview({ status: 'locked' })}/>
+        <StatCard label="Rejected records" value={(stats.rejected || 0).toLocaleString()} color="var(--red)" bg="var(--red-dim)"
+          onClick={() => goToReview({ status: 'rejected' })}/>
       </div>
 
       {reviewNeeded > 0 && (

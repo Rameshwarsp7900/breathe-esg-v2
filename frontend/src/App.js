@@ -15,6 +15,12 @@ import ChatbotWidget from './components/ChatbotWidget';
 function AppShell() {
   const { user, loading } = useAuth();
   const [page, setPage] = useState('dashboard');
+  const [reviewFilter, setReviewFilter] = useState({});
+
+  const goToReview = (filter = {}) => {
+    setReviewFilter(filter);
+    setPage('review');
+  };
 
   if (loading) return (
     <div style={{ minHeight:'100vh', display:'flex', alignItems:'center',
@@ -26,8 +32,8 @@ function AppShell() {
   if (!user) return <Login/>;
 
   const pages = {
-    dashboard: <Dashboard setPage={setPage}/>,
-    review:    <ReviewQueue/>,
+    dashboard: <Dashboard setPage={setPage} goToReview={goToReview}/>,
+    review:    <ReviewQueue initialFilter={reviewFilter}/>,
     ingest:    <IngestData/>,
     batches:   <BatchHistory/>,
     factors:   <EmissionFactors/>,
