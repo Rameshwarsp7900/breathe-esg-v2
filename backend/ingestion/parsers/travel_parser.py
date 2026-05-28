@@ -12,6 +12,7 @@ Fixes over v1:
 
 import math
 import logging
+from typing import Optional
 from .base import decode_bytes, read_csv_flexible, normalize_decimal, safe_str, parse_date_flexible, apply_column_aliases
 from .constants import AVIATION_EF, LONG_HAUL_KM, HOTEL_EF, CAR_EF
 
@@ -91,7 +92,7 @@ def _haversine_km(lat1, lon1, lat2, lon2) -> float:
     return R * 2 * math.asin(math.sqrt(a))
 
 
-def _iata_distance_km(iata1: str, iata2: str) -> float | None:
+def _iata_distance_km(iata1: str, iata2: str) -> Optional[float]:
     c1 = AIRPORT_COORDS.get((iata1 or '').upper().strip()[:4])
     c2 = AIRPORT_COORDS.get((iata2 or '').upper().strip()[:4])
     if c1 and c2:

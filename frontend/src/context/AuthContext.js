@@ -41,9 +41,16 @@ export function AuthProvider({ children }) {
   };
 
   const logout = async () => {
-    await authAPI.logout().catch(() => {});
-    localStorage.removeItem('authToken');
-    setUser(null); setTenants([]); setCurrentTenant(null);
+    try {
+      await authAPI.logout();
+    } catch (err) {
+      console.warn("Server logout request failed/timed out, clearing local state...", err);
+    } finally {
+      localStorage.removeItem('authToken');
+      setUser(null);
+      setTenants([]);
+      setCurrentTenant(null);
+    }
   };
 
   return (

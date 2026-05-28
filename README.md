@@ -4,9 +4,38 @@ Django REST + React prototype for ingesting multi-source GHG emissions data, nor
 SI units, flagging anomalies, and surfacing an analyst review dashboard before audit lock.
 
 ## Live Demo
-- **App:** [your Vercel URL]
-- **API:** [your Railway URL]/api/
+- **App:** [Deploy to Vercel — see DEPLOYMENT_CHECKLIST.md]
+- **API:** [Deploy to Railway — see DEPLOYMENT_CHECKLIST.md]
+- **Database:** [Supabase PostgreSQL — see MIGRATION_GUIDE.md]
 - **Credentials:** `admin` / `admin123`  ·  `analyst` / `analyst123`  ·  `viewer` / `viewer123`
+
+> 🚀 **Quick Start**: New here? Start with [GETTING_STARTED.md](GETTING_STARTED.md)  
+> 📋 **Deploy Now**: Follow [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) for step-by-step deployment (~30 minutes)  
+> 📖 **Full Guide**: See [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) for detailed migration instructions
+
+---
+
+## 📚 Documentation
+
+**→ [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md)** - Complete documentation guide with reading paths
+
+### Getting Started
+- **[GETTING_STARTED.md](GETTING_STARTED.md)** - 🚀 Start here! Complete beginner's guide
+- **[DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md)** - Step-by-step deployment guide (~30 minutes)
+- **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - One-page command reference
+
+### Deployment & Configuration
+- **[MIGRATION_GUIDE.md](MIGRATION_GUIDE.md)** - Comprehensive migration instructions
+- **[DEPLOYMENT_DIAGRAM.md](DEPLOYMENT_DIAGRAM.md)** - Visual architecture diagrams
+- **[ENV_VARIABLES.md](ENV_VARIABLES.md)** - Complete environment variables reference
+- **[FAQ.md](FAQ.md)** - Frequently asked questions and troubleshooting
+
+### Architecture & Design
+- **[ARCHITECTURE_COMPARISON.md](ARCHITECTURE_COMPARISON.md)** - Before/after architecture analysis
+- **[MODEL.md](MODEL.md)** - Data model documentation
+- **[DECISIONS.md](DECISIONS.md)** - Architecture decision records
+- **[TRADEOFFS.md](TRADEOFFS.md)** - What we didn't build and why
+- **[SOURCES.md](SOURCES.md)** - Emission factor sources and references
 
 ---
 
@@ -76,28 +105,26 @@ REACT_APP_API_URL=http://localhost:8000/api npm start
 
 ---
 
-## Deploy: Railway (backend) + Vercel (frontend)
+## Deploy: Supabase + Railway + Vercel
 
-### Backend on Railway
-1. New project → Deploy from GitHub → root directory: `backend/`
-2. Add Postgres plugin (Railway auto-sets `DATABASE_URL`)
-3. Set environment variables:
-   ```
-   SECRET_KEY=<python -c "import secrets; print(secrets.token_hex(50))">
-   DEBUG=False
-   ALLOWED_HOSTS=<your-railway-domain>.railway.app,localhost
-   CORS_ALLOW_ALL_ORIGINS=False
-   CORS_ALLOWED_ORIGINS=https://<your-vercel-domain>.vercel.app
-   CSRF_TRUSTED_ORIGINS=https://<your-vercel-domain>.vercel.app
-   ```
-4. Start command (set in railway.toml): `python manage.py migrate && gunicorn breathe_esg.wsgi:application --bind 0.0.0.0:$PORT --workers 2`
-5. After first deploy: `railway run python manage.py load_sample_data`
+### Quick Deployment (30 minutes)
 
-### Frontend on Vercel
-1. Import from GitHub → root directory: `frontend/`
-2. Build command: `npm run build`  Output dir: `build`
-3. Environment variable: `REACT_APP_API_URL=https://<your-railway-domain>.railway.app/api`
-4. Add `vercel.json` (already included) for SPA routing
+**Follow the step-by-step checklist**: [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md)
+
+### Architecture
+- **Database**: Supabase (managed PostgreSQL)
+- **Backend**: Railway (Django REST API)
+- **Frontend**: Vercel (React SPA)
+
+### Free Tier Limits
+- **Supabase**: 500MB database, unlimited API requests
+- **Railway**: $5 credit/month (~500 execution hours)
+- **Vercel**: Unlimited deployments, 100GB bandwidth/month
+
+**Total Monthly Cost: $0** (within free tier limits)
+
+### Detailed Migration Guide
+For comprehensive instructions including optional Supabase Auth migration, see [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md)
 
 ---
 

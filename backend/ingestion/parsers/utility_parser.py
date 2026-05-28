@@ -100,6 +100,12 @@ def parse_utility_file(raw_bytes: bytes, filename: str = '',
         raw_unit = safe_str(row.get('unit', 'kWh')).strip()
         unit_key = raw_unit.upper().replace('/', '').strip()
 
+        # Detect natural gas sub-metering (MMBTU, therms, M3, SCF) → Scope 1
+        GAS_UNITS = {'MMBTU', 'THERM', 'THERMS', 'M3', 'NM3', 'CBM', 'SCF', 'MCF'}
+        is_gas = unit_key in GAS_UNITS
+        scope = '1' if is_gas else '2'
+        category = 'Stationary Combustion (Gas Sub-metering)' if is_gas else 'Purchased Electricity'
+
         # Unit → kWh
         kwh_factor = None
         for k, v in ENERGY_TO_KWH.items():
@@ -147,8 +153,8 @@ def parse_utility_file(raw_bytes: bytes, filename: str = '',
         conv_str = f"1 {raw_unit} = {kwh_factor} kWh" if kwh_factor != 1.0 else ''
 
         records.append({
-            'scope': '2',
-            'category': 'Purchased Electricity',
+            'scope': scope,
+            'category': category,
             'source_type': 'utility_electricity',
             'raw_quantity': raw_qty,
             'raw_unit': raw_unit,

@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { tenantAPI } from '../api';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../components/Toast';
 
 const FLAG_LABELS = {
   unit_mismatch:'Unit Mismatch', missing_unit:'Missing Unit', outlier_value:'Outlier',
@@ -31,22 +32,39 @@ function StatusBadge({ status }) {
 }
 
 function DetailPanel({ record: r, slug, onClose, onAction }) {
+  const { toast } = useToast();
   const [flagForm, setFlagForm] = useState({ codes: [], notes: '' });
   const [rejectNotes, setRejectNotes] = useState('');
-  const [acting, setActing]     = useState('');
+  const [acting, setActing] = useState('');
+  const [editMode, setEditMode] = useState(false);
+  const [editQty, setEditQty] = useState(r.raw_quantity ?? '');
+  const [editUnit, setEditUnit] = useState(r.raw_unit ?? '');
 
   const act = async (action) => {
     setActing(action);
     try {
-      if (action === 'approve') await tenantAPI.approve(slug, r.id);
-      else if (action === 'flag')   await tenantAPI.flag(slug, r.id, { codes: flagForm.codes, notes: flagForm.notes });
-      else if (action === 'reject') await tenantAPI.reject(slug, r.id, { notes: rejectNotes });
-      else if (action === 'lock')   await tenantAPI.lock(slug, r.id);
+      if (action === 'approve')      await tenantAPI.approve(slug, r.id);
+      else if (action === 'flag')    await tenantAPI.flag(slug, r.id, { codes: flagForm.codes, notes: flagForm.notes });
+      else if (action === 'reject')  await tenantAPI.reject(slug, r.id, { notes: rejectNotes });
+      else if (action === 'lock')    await tenantAPI.lock(slug, r.id);
+      const labels = { approve:'Approved', flag:'Flagged', reject:'Rejected', lock:'Locked for audit' };
+      toast(`${labels[action] || action} successfully`, action === 'reject' ? 'warn' : 'success');
       onAction();
     } catch (e) {
-      alert(e.response?.data?.error || String(e));
+      toast(e.response?.data?.error || String(e), 'error');
     }
     setActing('');
+  };
+
+  const saveEdit = async () => {
+    try {
+      await tenantAPI.edit(slug, r.id, { raw_quantity: parseFloat(editQty), raw_unit: editUnit });
+      toast('Record updated', 'success');
+      setEditMode(false);
+      onAction();
+    } catch (e) {
+      toast(e.response?.data?.error || 'Edit failed', 'error');
+    }
   };
 
   const co2t = r.co2e_kg != null ? (r.co2e_kg / 1000).toFixed(4) : '—';
@@ -94,7 +112,6 @@ function DetailPanel({ record: r, slug, onClose, onAction }) {
               ['Period', r.activity_date || '—'],
               ['Location', r.location || '—'],
               ['Plant code', r.plant_code || '—'],
-              ['Raw quantity', r.raw_quantity != null ? `${r.raw_quantity} ${r.raw_unit}` : '—'],
               ['Normalised', r.quantity_norm != null ? `${r.quantity_norm} ${r.normalized_unit}` : '—'],
               ['Conversion', r.conversion_applied || 'None'],
               ['EF source', r.emission_factor_source || '—'],
@@ -104,6 +121,20 @@ function DetailPanel({ record: r, slug, onClose, onAction }) {
                 <div style={{ fontSize:12, fontFamily:'var(--mono)', color:'var(--text-muted)', wordBreak:'break-word' }}>{v}</div>
               </div>
             ))}
+            {/* Editable raw quantity */}
+            <div>
+              <div style={{ fontSize:10, color:'var(--text-dim)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:2 }}>Raw quantity</div>
+              {editMode ? (
+                <div style={{ display:'flex', gap:4 }}>
+                  <input value={editQty} onChange={e => setEditQty(e.target.value)} style={{ width:80, fontSize:12, padding:'3px 6px' }}/>
+                  <input value={editUnit} onChange={e => setEditUnit(e.target.value)} style={{ width:60, fontSize:12, padding:'3px 6px' }}/>
+                </div>
+              ) : (
+                <div style={{ fontSize:12, fontFamily:'var(--mono)', color:'var(--text-muted)' }}>
+                  {r.raw_quantity != null ? `${r.raw_quantity} ${r.raw_unit}` : '—'}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* CO2e highlight */}
@@ -171,8 +202,7 @@ function DetailPanel({ record: r, slug, onClose, onAction }) {
             <div style={{ borderTop:'1px solid var(--border)', paddingTop:16 }}>
               <div style={{ display:'flex', gap:8, marginBottom:14, flexWrap:'wrap' }}>
                 <button className="btn btn-approve" onClick={() => act('approve')}
-                  disabled={!!acting || r.status === 'approved'}
-                  style={{ flex:1 }}>
+                  disabled={!!acting || r.status === 'approved'} style={{ flex:1 }}>
                   {acting==='approve' ? <span className="spinner" style={{width:13,height:13}}/> : '✓ Approve'}
                 </button>
                 {r.status === 'approved' && (
@@ -183,6 +213,14 @@ function DetailPanel({ record: r, slug, onClose, onAction }) {
                 <button className="btn btn-reject" onClick={() => act('reject')} disabled={!!acting} style={{ flex:1 }}>
                   {acting==='reject' ? <span className="spinner" style={{width:13,height:13}}/> : '✕ Reject'}
                 </button>
+                {!editMode ? (
+                  <button className="btn btn-ghost btn-sm" onClick={() => setEditMode(true)} title="Edit raw quantity/unit">✏ Edit</button>
+                ) : (
+                  <div style={{ display:'flex', gap:4 }}>
+                    <button className="btn btn-approve btn-sm" onClick={saveEdit}>Save</button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => setEditMode(false)}>Cancel</button>
+                  </div>
+                )}
               </div>
 
               {/* Reject notes */}
@@ -229,14 +267,16 @@ function DetailPanel({ record: r, slug, onClose, onAction }) {
 
 export default function ReviewQueue() {
   const { currentTenant } = useAuth();
+  const { toast } = useToast();
   const [records, setRecords]   = useState([]);
   const [loading, setLoading]   = useState(true);
-  const [filters, setFilters]   = useState({ status: 'pending_review', scope: '', source_type: '', search: '' });
+  const [filters, setFilters]   = useState({ status: 'pending_review', scope: '', source_type: '', search: '', batch: '', date_from: '', date_to: '' });
   const [page, setPage]         = useState(1);
   const [totalCount, setTotal]  = useState(0);
   const [selected, setSelected] = useState(new Set());
   const [detail, setDetail]     = useState(null);
   const [bulkLoading, setBulk]  = useState(false);
+  const [exporting, setExporting] = useState(false);
   const PAGE_SIZE = 50;
 
   const load = useCallback(async () => {
@@ -259,9 +299,39 @@ export default function ReviewQueue() {
   const handleBulkApprove = async () => {
     if (!selected.size) return;
     setBulk(true);
-    await tenantAPI.bulkApprove(currentTenant.slug, [...selected]);
+    try {
+      const r = await tenantAPI.bulkApprove(currentTenant.slug, [...selected]);
+      toast(`Approved ${r.data.approved} records`, 'success');
+    } catch (e) { toast('Bulk approve failed', 'error'); }
     setSelected(new Set()); load();
     setBulk(false);
+  };
+
+  const handleBulkReject = async () => {
+    if (!selected.size) return;
+    setBulk(true);
+    try {
+      const r = await tenantAPI.bulkReject(currentTenant.slug, [...selected], '');
+      toast(`Rejected ${r.data.rejected} records`, 'warn');
+    } catch (e) { toast('Bulk reject failed', 'error'); }
+    setSelected(new Set()); load();
+    setBulk(false);
+  };
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const params = { ...filters };
+      Object.keys(params).forEach(k => !params[k] && delete params[k]);
+      const r = await tenantAPI.exportCsv(currentTenant.slug, params);
+      const url = URL.createObjectURL(new Blob([r.data]));
+      const a = document.createElement('a');
+      a.href = url; a.download = `emissions_${currentTenant.slug}.csv`;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(url);
+      toast('CSV exported', 'success');
+    } catch (e) { toast('Export failed', 'error'); }
+    setExporting(false);
   };
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
@@ -273,15 +343,25 @@ export default function ReviewQueue() {
           <h1 style={{ fontSize:19, fontWeight:600, marginBottom:3 }}>Review Queue</h1>
           <p style={{ color:'var(--text-muted)', fontSize:13 }}>Review, flag, approve, and lock emission records for audit</p>
         </div>
-        {selected.size > 0 && (
-          <button className="btn btn-approve" onClick={handleBulkApprove} disabled={bulkLoading}>
-            {bulkLoading ? <span className="spinner" style={{width:14,height:14}}/> : `✓ Approve ${selected.size} selected`}
+        <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+          {selected.size > 0 && (
+            <>
+              <button className="btn btn-approve" onClick={handleBulkApprove} disabled={bulkLoading}>
+                {bulkLoading ? <span className="spinner" style={{width:14,height:14}}/> : `✓ Approve ${selected.size}`}
+              </button>
+              <button className="btn btn-reject" onClick={handleBulkReject} disabled={bulkLoading}>
+                {bulkLoading ? <span className="spinner" style={{width:14,height:14}}/> : `✕ Reject ${selected.size}`}
+              </button>
+            </>
+          )}
+          <button className="btn btn-ghost btn-sm" onClick={handleExport} disabled={exporting}>
+            {exporting ? <span className="spinner" style={{width:13,height:13}}/> : '↓ Export CSV'}
           </button>
-        )}
+        </div>
       </div>
 
       {/* Filters */}
-      <div style={{ display:'flex', gap:10, marginBottom:14, flexWrap:'wrap' }}>
+      <div style={{ display:'flex', gap:8, marginBottom:10, flexWrap:'wrap' }}>
         <select value={filters.status} onChange={e => setFilter('status', e.target.value)}>
           <option value="">All statuses</option>
           {STATUS_OPTS.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
@@ -297,8 +377,17 @@ export default function ReviewQueue() {
           <option value="3">Scope 3</option>
         </select>
         <input placeholder="Search location, description…" value={filters.search}
-          onChange={e => setFilter('search', e.target.value)} style={{ width:220 }}/>
-        <span style={{ fontSize:12, color:'var(--text-muted)', alignSelf:'center', marginLeft:'auto' }}>
+          onChange={e => setFilter('search', e.target.value)} style={{ width:200 }}/>
+      </div>
+      <div style={{ display:'flex', gap:8, marginBottom:14, flexWrap:'wrap', alignItems:'center' }}>
+        <label style={{ fontSize:11, color:'var(--text-muted)' }}>From</label>
+        <input type="date" value={filters.date_from} onChange={e => setFilter('date_from', e.target.value)} style={{ width:140 }}/>
+        <label style={{ fontSize:11, color:'var(--text-muted)' }}>To</label>
+        <input type="date" value={filters.date_to} onChange={e => setFilter('date_to', e.target.value)} style={{ width:140 }}/>
+        {(filters.date_from || filters.date_to) && (
+          <button className="btn btn-ghost btn-xs" onClick={() => { setFilter('date_from',''); setFilter('date_to',''); }}>Clear dates</button>
+        )}
+        <span style={{ fontSize:12, color:'var(--text-muted)', marginLeft:'auto' }}>
           {totalCount} record{totalCount !== 1 ? 's' : ''}
         </span>
       </div>
@@ -347,9 +436,18 @@ export default function ReviewQueue() {
                       {r.flag_codes?.length > 0 && (
                         <span style={{ fontSize:11, color:'var(--amber)' }}>⚠ {r.flag_codes.length}</span>
                       )}
-                      {r.is_locked && <span style={{ fontSize:11, color:'var(--blue)' }}>🔒</span>}
+                      {r.is_locked && <span style={{ fontSize:11, color:'var(--blue)', marginLeft:4 }}>🔒</span>}
                     </td>
-                    <td onClick={e => e.stopPropagation()}>
+                    <td onClick={e => e.stopPropagation()} style={{ display:'flex', gap:4, justifyContent:'flex-end' }}>
+                      {r.status !== 'approved' && r.status !== 'locked' && r.status !== 'rejected' && (
+                        <button className="btn btn-approve btn-xs" onClick={async () => {
+                          try {
+                            await tenantAPI.approve(currentTenant.slug, r.id);
+                            toast('Approved', 'success');
+                            load();
+                          } catch (err) { toast(err.response?.data?.error || 'Failed', 'error'); }
+                        }}>Approve</button>
+                      )}
                       <button className="btn btn-ghost btn-xs" onClick={() => setDetail(r)}>View</button>
                     </td>
                   </tr>
@@ -364,7 +462,14 @@ export default function ReviewQueue() {
           <div style={{ display:'flex', justifyContent:'center', alignItems:'center', gap:8,
                         padding:'12px 16px', borderTop:'1px solid var(--border)' }}>
             <button className="btn btn-ghost btn-xs" disabled={page === 1} onClick={() => setPage(p => p - 1)}>← Prev</button>
-            <span style={{ fontSize:12, color:'var(--text-muted)' }}>Page {page} of {totalPages}</span>
+            {Array.from({length: Math.min(totalPages, 7)}, (_, i) => {
+              const p = i + 1;
+              return (
+                <button key={p} className={`btn btn-xs ${page === p ? 'btn-primary' : 'btn-ghost'}`}
+                  onClick={() => setPage(p)}>{p}</button>
+              );
+            })}
+            {totalPages > 7 && <span style={{ color:'var(--text-dim)', fontSize:12 }}>… {totalPages}</span>}
             <button className="btn btn-ghost btn-xs" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>Next →</button>
           </div>
         )}

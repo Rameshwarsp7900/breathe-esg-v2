@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './index.css';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ToastProvider } from './components/Toast';
 import Login from './pages/Login';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
@@ -8,6 +9,8 @@ import ReviewQueue from './pages/ReviewQueue';
 import IngestData from './pages/IngestData';
 import BatchHistory from './pages/BatchHistory';
 import EmissionFactors from './pages/EmissionFactors';
+import AdvancedTools from './pages/AdvancedTools';
+import ChatbotWidget from './components/ChatbotWidget';
 
 function AppShell() {
   const { user, loading } = useAuth();
@@ -28,6 +31,7 @@ function AppShell() {
     ingest:    <IngestData/>,
     batches:   <BatchHistory/>,
     factors:   <EmissionFactors/>,
+    advanced:  <AdvancedTools/>,
   };
 
   return (
@@ -36,10 +40,17 @@ function AppShell() {
       <main style={{ flex:1, overflowY:'auto', minHeight:'100vh', background:'var(--bg)' }}>
         {pages[page] || pages.dashboard}
       </main>
+      <ChatbotWidget/>
     </div>
   );
 }
 
 export default function App() {
-  return <AuthProvider><AppShell/></AuthProvider>;
+  return (
+    <AuthProvider>
+      <ToastProvider>
+        <AppShell/>
+      </ToastProvider>
+    </AuthProvider>
+  );
 }

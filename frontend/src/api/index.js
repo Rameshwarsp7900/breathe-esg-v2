@@ -38,16 +38,22 @@ export const authAPI = {
 };
 
 export const tenantAPI = {
-  dashboard:   slug          => client.get(`/tenants/${slug}/dashboard/`),
-  records:     (slug, p)     => client.get(`/tenants/${slug}/records/`, { params: p }),
-  record:      (slug, id)    => client.get(`/tenants/${slug}/records/${id}/`),
-  approve:     (slug, id)    => client.post(`/tenants/${slug}/records/${id}/approve/`),
-  flag:        (slug, id, d) => client.post(`/tenants/${slug}/records/${id}/flag/`, d),
-  reject:      (slug, id, d) => client.post(`/tenants/${slug}/records/${id}/reject/`, d),
-  lock:        (slug, id)    => client.post(`/tenants/${slug}/records/${id}/lock/`),
-  bulkApprove: (slug, ids)   => client.post(`/tenants/${slug}/records/bulk_approve/`, { ids }),
-  batches:     slug          => client.get(`/tenants/${slug}/batches/`),
-  ingest:      (slug, type, fd, onProgress) =>
+  dashboard:    (slug, p)     => client.get(`/tenants/${slug}/dashboard/`, { params: p }),
+  chat:         (slug, msg, hist, customKey) => client.post(`/tenants/${slug}/chat/`, { message: msg, history: hist, custom_key: customKey || null }),
+  docs:         ()            => client.get('/docs/'),
+  records:      (slug, p)     => client.get(`/tenants/${slug}/records/`, { params: p }),
+  record:       (slug, id)    => client.get(`/tenants/${slug}/records/${id}/`),
+  approve:      (slug, id)    => client.post(`/tenants/${slug}/records/${id}/approve/`),
+  flag:         (slug, id, d) => client.post(`/tenants/${slug}/records/${id}/flag/`, d),
+  reject:       (slug, id, d) => client.post(`/tenants/${slug}/records/${id}/reject/`, d),
+  lock:         (slug, id)    => client.post(`/tenants/${slug}/records/${id}/lock/`),
+  edit:         (slug, id, d) => client.patch(`/tenants/${slug}/records/${id}/edit/`, d),
+  bulkApprove:  (slug, ids)   => client.post(`/tenants/${slug}/records/bulk_approve/`, { ids }),
+  bulkReject:   (slug, ids, notes) => client.post(`/tenants/${slug}/records/bulk_reject/`, { ids, notes }),
+  exportCsv:    (slug, p)     => client.get(`/tenants/${slug}/records/export_csv/`, { params: p, responseType: 'blob' }),
+  pendingCount: (slug)        => client.get(`/tenants/${slug}/records/pending_count/`),
+  batches:      slug          => client.get(`/tenants/${slug}/batches/`),
+  ingest:       (slug, type, fd, onProgress) =>
     client.post(`/tenants/${slug}/ingest/${type}/`, fd, {
       headers: { 'Content-Type': 'multipart/form-data' },
       onUploadProgress: onProgress,
