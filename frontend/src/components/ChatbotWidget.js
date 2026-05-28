@@ -217,40 +217,112 @@ export default function ChatbotWidget() {
           const renderMessageText = (content) => {
             if (isUser) return <div>{content}</div>;
 
-            return content.split('\n').map((line, lineIdx) => {
-              const parseInlineBold = (text) => {
-                const parts = text.split(/(\*\*.*?\*\*)/g);
-                return parts.map((part, partIdx) => {
-                  if (part.startsWith('**') && part.endsWith('**')) {
-                    return <strong key={partIdx} style={{ fontWeight: 700 }}>{part.slice(2, -2)}</strong>;
-                  }
-                  return part;
-                });
-              };
+            const parseInlineBold = (text) => {
+              const parts = text.split(/(\*\*.*?\*\*)/g);
+              return parts.map((part, partIdx) => {
+                if (part.startsWith('**') && part.endsWith('**')) {
+                  return <strong key={partIdx} style={{ fontWeight: 700 }}>{part.slice(2, -2)}</strong>;
+                }
+                return part;
+              });
+            };
 
+            // Group lines into blocks: tables vs regular lines
+            const lines = content.split('\n');
+            const blocks = [];
+            let i = 0;
+            while (i < lines.length) {
+              const line = lines[i];
+              // Detect markdown table: line contains | and next line is separator (---|---)
+              if (line.includes('|') && i + 1 < lines.length && /^\s*\|?[\s\-:]+\|/.test(lines[i + 1])) {
+                const tableLines = [];
+                while (i < lines.length && lines[i].includes('|')) {
+                  tableLines.push(lines[i]);
+                  i++;
+                }
+                blocks.push({ type: 'table', lines: tableLines });
+              } else {
+                blocks.push({ type: 'line', content: line });
+                i++;
+              }
+            }
+
+            return blocks.map((block, blockIdx) => {
+              if (block.type === 'table') {
+                const rows = block.lines
+                  .filter(l => !/^\s*\|?[\s\-:]+\|/.test(l)) // remove separator rows
+                  .map(l =>
+                    l.replace(/^\|/, '').replace(/\|$/, '').split('|').map(c => c.trim())
+                  );
+                if (rows.length === 0) return null;
+                const [header, ...body] = rows;
+                return (
+                  <div key={blockIdx} style={{ overflowX: 'auto', margin: '8px 0' }}>
+                    <table style={{
+                      width: '100%',
+                      borderCollapse: 'collapse',
+                      fontSize: 11,
+                      border: '1px solid var(--border)',
+                      borderRadius: 6,
+                      overflow: 'hidden',
+                    }}>
+                      <thead>
+                        <tr style={{ background: 'var(--indigo)', color: '#fff' }}>
+                          {header.map((h, hi) => (
+                            <th key={hi} style={{
+                              padding: '6px 10px',
+                              textAlign: 'left',
+                              fontWeight: 600,
+                              fontSize: 11,
+                              whiteSpace: 'nowrap',
+                            }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {body.map((row, ri) => (
+                          <tr key={ri} style={{ background: ri % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
+                            {row.map((cell, ci) => (
+                              <td key={ci} style={{
+                                padding: '5px 10px',
+                                borderTop: '1px solid var(--border)',
+                                color: 'var(--text)',
+                                fontSize: 11,
+                              }}>{parseInlineBold(cell)}</td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              }
+
+              // Regular line rendering
+              const line = block.content;
               if (line.startsWith('- ') || line.startsWith('* ')) {
                 return (
-                  <li key={lineIdx} style={{ marginLeft: 14, marginBottom: 4 }}>
+                  <li key={blockIdx} style={{ marginLeft: 14, marginBottom: 4 }}>
                     {parseInlineBold(line.substring(2))}
                   </li>
                 );
               }
               if (line.startsWith('### ')) {
                 return (
-                  <div key={lineIdx} style={{ fontWeight: 700, fontSize: 13, marginTop: 8, marginBottom: 4, color: 'var(--indigo)' }}>
+                  <div key={blockIdx} style={{ fontWeight: 700, fontSize: 13, marginTop: 8, marginBottom: 4, color: 'var(--indigo)' }}>
                     {parseInlineBold(line.substring(4))}
                   </div>
                 );
               }
               if (line.startsWith('## ')) {
                 return (
-                  <div key={lineIdx} style={{ fontWeight: 700, fontSize: 14, marginTop: 10, marginBottom: 4, color: 'var(--indigo)' }}>
+                  <div key={blockIdx} style={{ fontWeight: 700, fontSize: 14, marginTop: 10, marginBottom: 4, color: 'var(--indigo)' }}>
                     {parseInlineBold(line.substring(3))}
                   </div>
                 );
               }
               return (
-                <div key={lineIdx} style={{ minHeight: line === '' ? 8 : 'auto', marginBottom: 2 }}>
+                <div key={blockIdx} style={{ minHeight: line === '' ? 8 : 'auto', marginBottom: 2 }}>
                   {parseInlineBold(line)}
                 </div>
               );
