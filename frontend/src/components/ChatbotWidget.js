@@ -77,6 +77,7 @@ export default function ChatbotWidget() {
     return (
       <button
         onClick={() => setIsOpen(true)}
+        aria-label="Open AI Assistant"
         style={{
           position: 'fixed',
           bottom: 24,
@@ -98,6 +99,8 @@ export default function ChatbotWidget() {
         }}
         onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
         onMouseLeave={e => e.currentTarget.style.transform = 'none'}
+        onFocus={e => e.currentTarget.style.transform = 'scale(1.08)'}
+        onBlur={e => e.currentTarget.style.transform = 'none'}
       >
         💬
       </button>
@@ -147,6 +150,7 @@ export default function ChatbotWidget() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <button
             onClick={() => setShowSettings(!showSettings)}
+            aria-label="AI Assistant Settings"
             style={{
               background: 'none',
               border: 'none',
@@ -161,6 +165,7 @@ export default function ChatbotWidget() {
           </button>
           <button
             onClick={() => setIsOpen(false)}
+            aria-label="Close AI Assistant"
             style={{
               background: 'none',
               border: 'none',
@@ -422,6 +427,7 @@ export default function ChatbotWidget() {
         <input
           value={input}
           onChange={e => setInput(e.target.value)}
+          aria-label="AI Assistant message input"
           placeholder="Ask a sustainability or data question..."
           disabled={loading}
           style={{ flex: 1, padding: '7px 11px', fontSize: 12, width: 'auto' }}
