@@ -153,7 +153,10 @@ def dashboard_stats(request, tenant_slug):
     ]
 
     total_co2e_kg = qs.filter(co2e_kg__isnull=False).aggregate(t=Sum('co2e_kg'))['t'] or 0
-    recent_batches = IngestionBatch.objects.filter(tenant=m.tenant).order_by('-uploaded_at')[:5]
+    # Optimization: select_related('uploaded_by') to avoid N+1 queries in serializer
+    recent_batches = (IngestionBatch.objects.filter(tenant=m.tenant)
+                      .select_related('uploaded_by')
+                      .order_by('-uploaded_at')[:5])
 
     # Available areas & personalization details
     available_countries = list(PlantCode.objects.filter(tenant=m.tenant).values_list('country', flat=True).distinct())
@@ -367,7 +370,10 @@ class IngestionBatchViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         try:
             m = _get_tenant_membership(self.request.user, self.kwargs['tenant_slug'])
-            return IngestionBatch.objects.filter(tenant=m.tenant).order_by('-uploaded_at')
+            # Optimization: select_related('uploaded_by') to avoid N+1 queries in serializer
+            return (IngestionBatch.objects.filter(tenant=m.tenant)
+                    .select_related('uploaded_by')
+                    .order_by('-uploaded_at'))
         except PermissionError:
             return IngestionBatch.objects.none()
 
