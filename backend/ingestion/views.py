@@ -99,7 +99,12 @@ class IngestFileView(APIView):
             batch.processing_log = [f'Parser exception: {e}']
             batch.processed_at = timezone.now()
             batch.save(update_fields=['status', 'processing_log', 'processed_at'])
-            return Response({'error': 'Parser crashed.', 'detail': str(e)}, status=500)
+
+            err_payload = {'error': 'Parser crashed.'}
+            from django.conf import settings
+            if settings.DEBUG:
+                err_payload['detail'] = str(e)
+            return Response(err_payload, status=500)
 
         # Persist records
         to_create = []

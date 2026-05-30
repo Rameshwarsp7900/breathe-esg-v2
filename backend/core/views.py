@@ -530,10 +530,11 @@ However, I can still analyze your **{m.tenant.name}** sustainability data! Here 
         }, status=400)
     except Exception as e:
         logger.exception("Chatbot request exception")
-        return Response({
-            'error': 'AI request failed.',
-            'detail': str(e)
-        }, status=500)
+        err_payload = {'error': 'AI request failed.'}
+        from django.conf import settings
+        if settings.DEBUG:
+            err_payload['detail'] = str(e)
+        return Response(err_payload, status=500)
 
 
 # ── Compliance Documentation API ─────────────────────────────────────────────
