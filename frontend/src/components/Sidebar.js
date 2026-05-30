@@ -24,8 +24,10 @@ export default function Sidebar({ page, setPage }) {
   }, [currentTenant]);
 
   return (
-    <nav style={{
-      width: 240, flexShrink: 0, background: '#ffffff',
+    <nav
+      aria-label="Main Navigation"
+      style={{
+        width: 240, flexShrink: 0, background: '#ffffff',
       borderRight: '1px solid var(--border)',
       display: 'flex', flexDirection: 'column', height: '100vh',
       position: 'sticky', top: 0, overflow: 'hidden',
@@ -76,6 +78,8 @@ export default function Sidebar({ page, setPage }) {
             <button 
               key={item.key} 
               onClick={() => setPage(item.key)} 
+              className="sidebar-nav-btn"
+              aria-current={active ? 'page' : undefined}
               style={{
                 width: '100%', display: 'flex', alignItems: 'center', gap: 10,
                 padding: '10px 14px', borderRadius: 'var(--r)', border: 'none',
@@ -97,12 +101,27 @@ export default function Sidebar({ page, setPage }) {
                   e.currentTarget.style.color = 'var(--text-muted)';
                 }
               }}
+              onFocus={e => {
+                if (!active) {
+                  e.currentTarget.style.background = 'var(--bg-hover)';
+                  e.currentTarget.style.color = 'var(--text)';
+                }
+              }}
+              onBlur={e => {
+                if (!active) {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = 'var(--text-muted)';
+                }
+              }}
             >
-              <span style={{ 
-                fontSize: 16, width: 20, textAlign: 'center', 
-                color: active ? 'var(--indigo)' : 'var(--text-dim)', 
-                opacity: active ? 1 : 0.8 
-              }}>
+              <span
+                aria-hidden="true"
+                style={{
+                  fontSize: 16, width: 20, textAlign: 'center',
+                  color: active ? 'var(--indigo)' : 'var(--text-dim)',
+                  opacity: active ? 1 : 0.8
+                }}
+              >
                 {item.icon}
               </span>
               {item.label}
