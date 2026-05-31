@@ -24,20 +24,26 @@ export default function Sidebar({ page, setPage }) {
   }, [currentTenant]);
 
   return (
-    <nav style={{
-      width: 240, flexShrink: 0, background: '#ffffff',
-      borderRight: '1px solid var(--border)',
-      display: 'flex', flexDirection: 'column', height: '100vh',
-      position: 'sticky', top: 0, overflow: 'hidden',
-    }}>
+    <nav
+      aria-label="Main Navigation"
+      style={{
+        width: 240, flexShrink: 0, background: '#ffffff',
+        borderRight: '1px solid var(--border)',
+        display: 'flex', flexDirection: 'column', height: '100vh',
+        position: 'sticky', top: 0, overflow: 'hidden',
+      }}
+    >
       {/* Brand Header */}
       <div style={{ padding: '24px 20px 18px', borderBottom: '1px solid var(--border)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: 8, background: 'var(--indigo)',
-            display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(95, 59, 246, 0.2)'
-          }}>
+          <div
+            aria-hidden="true"
+            style={{
+              width: 32, height: 32, borderRadius: 8, background: 'var(--indigo)',
+              display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center',
+              boxShadow: '0 2px 8px rgba(95, 59, 246, 0.2)'
+            }}
+          >
             <span style={{ color: '#fff', fontWeight: 700, fontSize: 16 }}>B</span>
           </div>
           <span style={{ fontWeight: 700, fontSize: 16, letterSpacing: '-0.02em', color: 'var(--text)' }}>Breathe ESG</span>
@@ -59,6 +65,7 @@ export default function Sidebar({ page, setPage }) {
         
         {tenants.length > 1 && (
           <select 
+            aria-label="Switch organization"
             value={currentTenant?.slug || ''} 
             onChange={e => setCurrentTenant(tenants.find(t => t.slug === e.target.value))}
             style={{ width: '100%', marginTop: 10, fontSize: 12, padding: '6px 10px', background: '#fafbfc', border: '1px solid var(--border-mid)' }}
@@ -72,10 +79,23 @@ export default function Sidebar({ page, setPage }) {
       <div style={{ flex: 1, padding: '16px 12px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
         {NAV.map(item => {
           const active = page === item.key;
+          const handleFocus = e => {
+            if (!active) {
+              e.currentTarget.style.background = 'var(--bg-hover)';
+              e.currentTarget.style.color = 'var(--text)';
+            }
+          };
+          const handleBlur = e => {
+            if (!active) {
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.color = 'var(--text-muted)';
+            }
+          };
           return (
             <button 
               key={item.key} 
-              onClick={() => setPage(item.key)} 
+              onClick={() => setPage(item.key)}
+              aria-current={active ? 'page' : undefined}
               style={{
                 width: '100%', display: 'flex', alignItems: 'center', gap: 10,
                 padding: '10px 14px', borderRadius: 'var(--r)', border: 'none',
@@ -85,24 +105,19 @@ export default function Sidebar({ page, setPage }) {
                 transition: 'all 0.12s ease', textAlign: 'left',
                 fontFamily: 'var(--font)',
               }}
-              onMouseEnter={e => {
-                if (!active) {
-                  e.currentTarget.style.background = 'var(--bg-hover)';
-                  e.currentTarget.style.color = 'var(--text)';
-                }
-              }}
-              onMouseLeave={e => {
-                if (!active) {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = 'var(--text-muted)';
-                }
-              }}
+              onMouseEnter={handleFocus}
+              onMouseLeave={handleBlur}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
             >
-              <span style={{ 
-                fontSize: 16, width: 20, textAlign: 'center', 
-                color: active ? 'var(--indigo)' : 'var(--text-dim)', 
-                opacity: active ? 1 : 0.8 
-              }}>
+              <span
+                aria-hidden="true"
+                style={{
+                  fontSize: 16, width: 20, textAlign: 'center',
+                  color: active ? 'var(--indigo)' : 'var(--text-dim)',
+                  opacity: active ? 1 : 0.8
+                }}
+              >
                 {item.icon}
               </span>
               {item.label}
